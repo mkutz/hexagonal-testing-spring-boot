@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import io.github.mkutz.hexagonaltesting.TestcontainersConfiguration
 import io.github.mkutz.hexagonaltesting.application.order.OrderId
@@ -65,5 +66,41 @@ class PlaceOrderEndToEndTest {
     val orderId = Regex(""""orderId"\s*:\s*"([^"]+)"""").find(response.body())!!.groupValues[1]
     // Assert THIS order exists — never "assert exactly one order exists".
     assertThat(orders.findById(OrderId(UUID.fromString(orderId)))).isNotNull()
+  }
+
+  @Test
+  fun `posting an order above the credit limit returns 422`() {
+    val customerId = UUID.randomUUID()
+    // Override the generous default limit for just this customer so the order is rejected. The
+    // credit-limit rule itself is exhausted in the unit tests; here we only prove that a rejection
+    // maps to 422 through the full stack — a wiring concern the HTTP-agnostic core can't cover.
+    paymentServer.stubFor(
+      get(urlPathEqualTo("/customers/$customerId/credit-limit"))
+        .atPriority(1)
+        .willReturn(okJson("""{"limitMinor": 5000}"""))
+    )
+    val request =
+      HttpRequest.newBuilder()
+        .uri(URI.create("http://localhost:$port/orders"))
+        .header("Content-Type", "application/json")
+        .POST(BodyPublishers.ofString("""{ "customerId": "$customerId", "amount": "80.00" }"""))
+        .build()
+
+    val response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString())
+
+    assertThat(response.statusCode()).isEqualTo(422)
+  }
+
+  @Test
+  fun `getting an unknown order returns 404`() {
+    val request =
+      HttpRequest.newBuilder()
+        .uri(URI.create("http://localhost:$port/orders/${UUID.randomUUID()}")) // never persisted
+        .GET()
+        .build()
+
+    val response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString())
+
+    assertThat(response.statusCode()).isEqualTo(404)
   }
 }
