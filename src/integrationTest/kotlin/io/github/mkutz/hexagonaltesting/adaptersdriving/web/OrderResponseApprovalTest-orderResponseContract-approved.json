@@ -1,0 +1,5 @@
+{
+  "orderId" : "[uuid 1]",
+  "customerId" : "[uuid 2]",
+  "amountMinor" : 8000
+}
