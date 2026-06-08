@@ -36,7 +36,7 @@ class OrderController(private val placeOrder: PlaceOrder, private val orders: Or
     ) {
       is OrderPlaced ->
         ResponseEntity.status(CREATED).body(orders.findById(result.orderId)!!.toResponse())
-      is OrderRejected -> ResponseEntity.unprocessableEntity().build()
+      is OrderRejected -> ResponseEntity.unprocessableContent().build()
     }
 
   @GetMapping("/{id}")
