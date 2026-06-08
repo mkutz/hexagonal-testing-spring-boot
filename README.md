@@ -1,5 +1,7 @@
 # Testing Hexagonal Architecture by Risk
 
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=mkutz_hexagonal-testing-spring-boot&metric=coverage)](https://sonarcloud.io/summary/new_code?id=mkutz_hexagonal-testing-spring-boot)
+
 Most articles about testing hexagonal architecture start with the architecture and bolt the tests on afterwards. This one starts somewhere else: with the risks. Every test you write should exist to mitigate a specific risk, at the cheapest layer that can credibly mitigate it. If a test doesn't reduce a real risk, it's just a maintenance liability wearing a green checkmark.
 
 Two influences shape this approach. The first is James Shore's [*Testing Without Mocks* pattern language](https://www.jamesshore.com/v2/projects/nullables/testing-without-mocks) — the preference for sociable, state-based tests over mock-heavy interaction tests, and the use of in-memory fakes instead of mocking frameworks. The second is Richard Bradshaw's [TRIMS heuristic](https://automationintesting.com/2019/08/trims-automation-in-testing-strategy.html), which is where the risk-based framing comes from. TRIMS stands for Targeted, Reliable, Informative, Maintainable, and Speedy — and its very first principle is the one this whole article is built on: a check should be targeted to a specific risk and automated on the lowest layer the testability allows.

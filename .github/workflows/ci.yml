@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, test & coverage
+    runs-on: ubuntu-latest # has Docker preinstalled for Testcontainers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Sonar Cloud needs full history for blame and new-code detection.
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Runs the unit suite, then the integration suite against real Postgres + WireMock
+      # (Testcontainers), then builds the merged JaCoCo report.
+      - name: Build, test & coverage
+        run: ./gradlew check --stacktrace
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-merged-report
+          path: build/reports/jacoco/jacocoMergedReport
+          if-no-files-found: warn
+
+      # Skips automatically on forked-PR builds, where the token secret is unavailable.
+      - name: Sonar Cloud analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # enables PR decoration
+        run: ./gradlew sonar --stacktrace
