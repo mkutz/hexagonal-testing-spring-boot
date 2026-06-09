@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # GitHub Actions used in the CI workflow (the `uses:` pins in .github/workflows).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Gradle dependencies (the `libs.versions.toml` version catalog) and the Gradle
+  # wrapper (`gradle-wrapper.properties`) — Dependabot's gradle ecosystem updates both.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    # Group the routine minor/patch bumps into one PR to cut noise; let majors come
+    # as individual PRs so they can be reviewed (and the build verified) on their own.
+    groups:
+      gradle-minor-and-patch:
+        update-types: [minor, patch]
