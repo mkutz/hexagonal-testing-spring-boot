@@ -1,6 +1,6 @@
 [versions]
 approvej = "1.6.2"
-kotlin = "2.2.21"
+kotlin = "2.4.0"
 ktlint = "1.8.0"
 sonarqube = "6.2.0.5505"
 spotless = "8.6.0"
