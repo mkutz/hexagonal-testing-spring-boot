@@ -6,11 +6,10 @@ import io.github.mkutz.hexagonaltesting.application.order.Order
 import io.github.mkutz.hexagonaltesting.application.order.OrderId
 import io.github.mkutz.hexagonaltesting.application.order.OrderPlaced
 import io.github.mkutz.hexagonaltesting.application.order.OrderRejected
-import io.github.mkutz.hexagonaltesting.application.order.PlaceOrder
 import io.github.mkutz.hexagonaltesting.application.order.PlaceOrderCommand
 import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
+import io.github.mkutz.hexagonaltesting.application.order.port.ToPlaceOrder
 import java.util.UUID
-import org.springframework.http.HttpStatus.CREATED
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,11 +19,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 
 /** Driving adapter: the inbound REST endpoint for orders. */
 @RestController
 @RequestMapping("/orders")
-class OrderController(private val placeOrder: PlaceOrder, private val orders: OrderRepository) {
+class OrderController(private val placeOrder: ToPlaceOrder, private val orders: OrderRepository) {
 
   @PostMapping
   fun place(@RequestBody request: PlaceOrderRequest): ResponseEntity<OrderResponse> =
@@ -34,8 +34,14 @@ class OrderController(private val placeOrder: PlaceOrder, private val orders: Or
           PlaceOrderCommand(CustomerId(request.customerId), Money.ofEuros(request.amount))
         )
     ) {
-      is OrderPlaced ->
-        ResponseEntity.status(CREATED).body(orders.findById(result.orderId)!!.toResponse())
+      is OrderPlaced -> {
+        val location =
+          ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{id}")
+            .buildAndExpand(result.orderId.value)
+            .toUri()
+        ResponseEntity.created(location).body(orders.findById(result.orderId)!!.toResponse())
+      }
       is OrderRejected -> ResponseEntity.unprocessableContent().build()
     }
 

@@ -63,9 +63,11 @@ class PlaceOrderEndToEndTest {
     val response = HttpClient.newHttpClient().send(request, BodyHandlers.ofString())
 
     assertThat(response.statusCode()).isEqualTo(201)
-    val orderId = Regex(""""orderId"\s*:\s*"([^"]+)"""").find(response.body())!!.groupValues[1]
+    // The Location header points at the created resource; its last path segment is the order id.
+    val location = response.headers().firstValue("Location").orElseThrow()
+    val orderId = UUID.fromString(location.substringAfterLast('/'))
     // Assert THIS order exists — never "assert exactly one order exists".
-    assertThat(orders.findById(OrderId(UUID.fromString(orderId)))).isNotNull()
+    assertThat(orders.findById(OrderId(orderId))).isNotNull()
   }
 
   @Test
