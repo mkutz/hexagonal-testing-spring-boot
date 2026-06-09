@@ -122,14 +122,6 @@ sonar {
 // Sonar needs the merged XML to exist before it analyses.
 tasks.named("sonar") { dependsOn(jacocoMergedReport) }
 
-// The approvej plugin defaults its inventory CLI to the `test` source set, but our approval test
-// lives in integrationTest — point the tasks at that classpath so it can resolve the test methods
-// and not mistake their approved files for leftovers.
-tasks
-  .withType<JavaExec>()
-  .matching { it.name.startsWith("approvej") }
-  .configureEach { classpath = sourceSets["integrationTest"].runtimeClasspath }
-
 kotlin {
   compilerOptions {
     jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24
