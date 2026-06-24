@@ -71,6 +71,11 @@ testing {
 
 tasks.named("check") { dependsOn(testing.suites.named("integrationTest")) }
 
+// JDK 25 warns when JNA (pulled in by Testcontainers) calls native code from the unnamed module.
+// Grant native access explicitly so the test JVMs stay quiet (and forward-compatible when the JDK
+// starts blocking it by default).
+tasks.withType<Test>().configureEach { jvmArgs("--enable-native-access=ALL-UNNAMED") }
+
 // One report covering BOTH suites. The dedicated `jacoco-report-aggregation` plugin is deliberately
 // not used: it keys reports by test-suite type (yielding a separate `testCodeCoverageReport` and
 // `integrationTestCodeCoverageReport`), which is built for aggregating across projects, not for
@@ -120,7 +125,7 @@ tasks.named("sonar") { dependsOn(jacocoMergedReport) }
 kotlin {
   compilerOptions {
     jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
-    freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+    freeCompilerArgs.addAll("-Xjsr305=strict")
   }
 }
 
