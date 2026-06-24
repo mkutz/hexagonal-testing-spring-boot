@@ -20,10 +20,6 @@ version = "0.0.1-SNAPSHOT"
 
 java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 
-// Kotlin 2.2.21 tops out at JVM target 24, so target 24 bytecode for both compilers
-// (the JDK 25 toolchain still runs the build) to keep Java/Kotlin targets consistent.
-tasks.withType<JavaCompile>().configureEach { options.release = 24 }
-
 repositories { mavenCentral() }
 
 dependencies {
@@ -124,7 +120,7 @@ tasks.named("sonar") { dependsOn(jacocoMergedReport) }
 
 kotlin {
   compilerOptions {
-    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
     freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
   }
 }

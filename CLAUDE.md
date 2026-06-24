@@ -26,9 +26,9 @@ Approval tests (ApproveJ): a changed contract produces a `*-received.*` file nex
 overwrite. The approvej Gradle tasks are wired to the `integrationTest` source set (see the
 `JavaExec` block in `build.gradle.kts`), because the approval test lives there, not in `test`.
 
-The Gradle toolchain runs on JDK 25 but deliberately compiles to **JVM 24 bytecode**
-(`options.release = 24` and Kotlin `jvmTarget = JVM_24`, on Kotlin 2.4.0). Keep `options.release`
-and `jvmTarget` in lockstep if you touch them.
+The Gradle toolchain runs on JDK 25 and both compilers emit **JVM 25 bytecode**: Kotlin via
+`jvmTarget = JVM_25`, Java by inheriting the toolchain (no `options.release` override). If you raise
+the toolchain, bump `jvmTarget` in lockstep.
 
 ## Architecture: ports and adapters
 
