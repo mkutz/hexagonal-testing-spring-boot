@@ -17,7 +17,7 @@ This is the companion codebase for the article in `README.md`, "Testing Hexagona
 
 # Run a single test class or method (either suite):
 ./gradlew test --tests "*PlaceOrderTest"
-./gradlew integrationTest --tests "*OrdersStoreIntegrationTest"
+./gradlew integrationTest --tests "*ToStoreOrdersViaJpaIntegrationTest"
 ./gradlew test --tests "*PlaceOrderTest.placing an order below the credit limit succeeds"
 ```
 
@@ -26,8 +26,9 @@ Approval tests (ApproveJ): a changed contract produces a `*-received.*` file nex
 overwrite. The approvej Gradle tasks are wired to the `integrationTest` source set (see the
 `JavaExec` block in `build.gradle.kts`), because the approval test lives there, not in `test`.
 
-The Gradle toolchain runs on JDK 25 but compiles to **JVM 24 bytecode** (Kotlin 2.2.21 caps at
-target 24). Keep `options.release` and `jvmTarget` in lockstep if you touch them.
+The Gradle toolchain runs on JDK 25 but deliberately compiles to **JVM 24 bytecode**
+(`options.release = 24` and Kotlin `jvmTarget = JVM_24`, on Kotlin 2.4.0). Keep `options.release`
+and `jvmTarget` in lockstep if you touch them.
 
 ## Architecture: ports and adapters
 
@@ -40,9 +41,10 @@ strategy work:
 - `application/order/port/` — the **driven ports**: `ToStoreOrders`, `ToHandlePayments`. The core
   owns these interfaces; adapters implement them.
 - `adaptersdriving/web/` — the **driving adapter**: `OrderController` and its request/response DTOs.
-- `drivenadapters/persistence/` — JPA adapter (`OrdersStore` + `OrderEntity` +
+- `drivenadapters/persistence/` — JPA adapter (`ToStoreOrdersViaJpa` + `OrderEntity` +
   `OrderRepository`) backed by Postgres.
-- `drivenadapters/payment/` — `PaymentHandler`, an HTTP client to an external payment service.
+- `drivenadapters/payment/` — `ToHandlePaymentsViaRest`, an HTTP client to an external payment
+  service.
 
 The core must not import from `adaptersdriving`, `drivenadapters`, or Spring web/JPA. New behavior
 goes in the core behind a port; new infrastructure goes in an adapter implementing a port.
@@ -54,8 +56,8 @@ re-test a risk at a higher layer. Concretely:
 
 - **Unit tests** (`src/test/`) — exhaust business-logic risk: every equivalence class and boundary
   (credit-limit cases live here). State-based assertions only; **no mocking framework**. Ports are
-  replaced by hand-written in-memory fakes from `src/testFixtures/` (`InMemoryOrdersStore`,
-  `InMemoryPaymentHandler`). No Spring context.
+  replaced by hand-written in-memory fakes from `src/testFixtures/` (`ToStoreOrdersInMemory`,
+  `ToHandlePaymentsInMemory`). No Spring context.
 - **Contract test suites** (`src/testFixtures/`, e.g. `ToStoreOrdersContract`) — abstract classes
   encoding behavior every port implementation must satisfy. Run against *both* the in-memory fake
   (as a unit test) and the real adapter (in the integration suite). This is what keeps fakes honest;

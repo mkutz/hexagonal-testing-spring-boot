@@ -7,16 +7,18 @@ import org.springframework.stereotype.Service
 
 /** Core use case: place an order if the customer is within their credit limit. */
 @Service
-class PlaceOrder(private val orders: ToStoreOrders, private val payments: ToHandlePayments) :
-  ToPlaceOrder {
+class PlaceOrder(
+  private val orderStore: ToStoreOrders,
+  private val paymentHandler: ToHandlePayments,
+) : ToPlaceOrder {
 
   override fun handle(command: PlaceOrderCommand): PlaceOrderResult {
-    if (command.amount > payments.creditLimit(command.customer)) {
+    if (command.amount > paymentHandler.creditLimit(command.customer)) {
       return OrderRejected("amount exceeds credit limit")
     }
     val order = Order(OrderId.random(), command.customer, command.amount)
-    orders.save(order)
-    payments.charge(command.customer, command.amount)
+    orderStore.save(order)
+    paymentHandler.charge(command.customer, command.amount)
     return OrderPlaced(order.id)
   }
 }

@@ -9,7 +9,7 @@ import org.springframework.web.client.body
 
 /** Driven adapter: talks to the external payment service over HTTP. */
 @Component
-class PaymentHandler(private val paymentRestClient: RestClient) : ToHandlePayments {
+class ToHandlePaymentsViaRest(private val paymentRestClient: RestClient) : ToHandlePayments {
 
   override fun creditLimit(customer: CustomerId): Money {
     val response =

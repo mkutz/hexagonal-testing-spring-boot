@@ -14,14 +14,14 @@ import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.JdbcTemplate
 
 /**
- * Runs the shared [ToStoreOrdersContract] against the real `OrdersStore` JPA adapter on a real
- * Postgres, plus the one bespoke check that only real infrastructure can reveal: money lands in the
- * right column in the right representation. The credit-limit boundaries are NOT re-tested here —
- * they were exhausted in the unit suite.
+ * Runs the shared [ToStoreOrdersContract] against the real `ToStoreOrdersViaJpa` JPA adapter on a
+ * real Postgres, plus the one bespoke check that only real infrastructure can reveal: money lands
+ * in the right column in the right representation. The credit-limit boundaries are NOT re-tested
+ * here — they were exhausted in the unit suite.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(TestcontainersConfiguration::class)
-class OrdersStoreIntegrationTest : ToStoreOrdersContract() {
+class ToStoreOrdersViaJpaIntegrationTest : ToStoreOrdersContract() {
 
   @Autowired private lateinit var store: ToStoreOrders
 

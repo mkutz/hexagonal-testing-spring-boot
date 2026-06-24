@@ -4,7 +4,7 @@ import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import java.util.concurrent.ConcurrentHashMap
 
 /** Hand-written in-memory fake of [ToStoreOrders] for fast, infrastructure-free unit tests. */
-class InMemoryOrdersStore : ToStoreOrders {
+class ToStoreOrdersInMemory : ToStoreOrders {
 
   private val store = ConcurrentHashMap<OrderId, Order>()
 

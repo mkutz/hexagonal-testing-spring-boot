@@ -10,25 +10,25 @@ import org.junit.jupiter.api.Test
  */
 class PlaceOrderTest {
 
-  private val orders = InMemoryOrdersStore()
-  private val payments = InMemoryPaymentHandler()
-  private val placeOrder = PlaceOrder(orders, payments)
+  private val orderStore = ToStoreOrdersInMemory()
+  private val paymentHandler = ToHandlePaymentsInMemory()
+  private val placeOrder = PlaceOrder(orderStore, paymentHandler)
 
   @Test
   fun `placing an order below the credit limit succeeds`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(80)))
 
     assertThat(result).isInstanceOf(OrderPlaced::class.java)
-    assertThat(orders.findById((result as OrderPlaced).orderId)).isNotNull()
+    assertThat(orderStore.findById((result as OrderPlaced).orderId)).isNotNull()
   }
 
   @Test
   fun `placing an order exactly at the credit limit succeeds`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(100)))
 
@@ -38,7 +38,7 @@ class PlaceOrderTest {
   @Test
   fun `placing an order one cent above the credit limit is rejected`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.ofMinorUnits(10_001)))
 
@@ -48,21 +48,21 @@ class PlaceOrderTest {
   @Test
   fun `placing an order well above the credit limit is rejected and persists nothing`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(120)))
 
     assertThat(result).isInstanceOf(OrderRejected::class.java)
-    assertThat(payments.chargesFor(customer)).isEmpty()
+    assertThat(paymentHandler.chargesFor(customer)).isEmpty()
   }
 
   @Test
   fun `a successful order charges the customer exactly the order amount`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(80)))
 
-    assertThat(payments.chargesFor(customer)).containsExactly(Money.euros(80))
+    assertThat(paymentHandler.chargesFor(customer)).containsExactly(Money.euros(80))
   }
 }

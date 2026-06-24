@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
  * In-memory fake of [ToHandlePayments]. Credit limits are seeded via [setCreditLimit]; charges are
  * recorded so state-based tests can assert on the resulting state rather than on method calls.
  */
-class InMemoryPaymentHandler : ToHandlePayments {
+class ToHandlePaymentsInMemory : ToHandlePayments {
 
   private val creditLimits = ConcurrentHashMap<CustomerId, Money>()
   private val charges = ConcurrentHashMap<CustomerId, MutableList<Money>>()

@@ -22,12 +22,13 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDO
 import org.springframework.context.annotation.Import
 
 /**
- * Drives the real `PaymentHandler` adapter against a WireMock stand-in for the third-party payment
- * service — the integration risk only real HTTP can reveal: URL, serialization, response mapping.
+ * Drives the real `ToHandlePaymentsViaRest` adapter against a WireMock stand-in for the third-party
+ * payment service — the integration risk only real HTTP can reveal: URL, serialization, response
+ * mapping.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(TestcontainersConfiguration::class)
-class PaymentHandlerIntegrationTest {
+class ToHandlePaymentsViaRestIntegrationTest {
 
   @Autowired private lateinit var paymentHandler: ToHandlePayments
 

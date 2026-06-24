@@ -49,8 +49,8 @@ flowchart LR
     end
 
     subgraph driven["Driven adapters"]
-        jpa["OrdersStore"]
-        payg["PaymentHandler"]
+        jpa["ToStoreOrdersViaJpa"]
+        payg["ToHandlePaymentsViaRest"]
     end
 
     db[(Postgres)]
@@ -98,7 +98,7 @@ interface ToStoreOrders {
   fun findById(id: OrderId): Order?
 }
 
-class InMemoryOrdersStore : ToStoreOrders {
+class ToStoreOrdersInMemory : ToStoreOrders {
 
   private val store = ConcurrentHashMap<OrderId, Order>()
 
@@ -110,37 +110,37 @@ class InMemoryOrdersStore : ToStoreOrders {
 }
 ```
 
-> 📄 Source: [`ToStoreOrders.kt`](src/main/kotlin/io/github/mkutz/hexagonaltesting/application/order/port/ToStoreOrders.kt) · [`InMemoryOrdersStore.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/InMemoryOrdersStore.kt) — the snippets below are taken verbatim from this repository's Kotlin sources, trimmed to the relevant excerpt and without the package and import lines.
+> 📄 Source: [`ToStoreOrders.kt`](src/main/kotlin/io/github/mkutz/hexagonaltesting/application/order/port/ToStoreOrders.kt) · [`ToStoreOrdersInMemory.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/ToStoreOrdersInMemory.kt) — the snippets below are taken verbatim from this repository's Kotlin sources, trimmed to the relevant excerpt and without the package and import lines.
 
 The core's use case is then tested directly, with no Spring context, no mocking framework, and no infrastructure:
 
 ```kotlin
 class PlaceOrderTest {
 
-  private val orders = InMemoryOrdersStore()
-  private val payments = InMemoryPaymentHandler()
-  private val placeOrder = PlaceOrder(orders, payments)
+  private val orderStore = ToStoreOrdersInMemory()
+  private val paymentHandler = ToHandlePaymentsInMemory()
+  private val placeOrder = PlaceOrder(orderStore, paymentHandler)
 
   @Test
   fun `placing an order below the credit limit succeeds`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(80)))
 
     assertThat(result).isInstanceOf(OrderPlaced::class.java)
-    assertThat(orders.findById((result as OrderPlaced).orderId)).isNotNull()
+    assertThat(orderStore.findById((result as OrderPlaced).orderId)).isNotNull()
   }
 
   @Test
   fun `placing an order well above the credit limit is rejected and persists nothing`() {
     val customer = CustomerId.random()
-    payments.setCreditLimit(customer, Money.euros(100))
+    paymentHandler.setCreditLimit(customer, Money.euros(100))
 
     val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(120)))
 
     assertThat(result).isInstanceOf(OrderRejected::class.java)
-    assertThat(payments.chargesFor(customer)).isEmpty()
+    assertThat(paymentHandler.chargesFor(customer)).isEmpty()
   }
 }
 ```
@@ -191,7 +191,7 @@ I use a single shared application context across all integration tests. Spinning
 ```kotlin
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(TestcontainersConfiguration::class)
-class OrdersStoreIntegrationTest : ToStoreOrdersContract() {
+class ToStoreOrdersViaJpaIntegrationTest : ToStoreOrdersContract() {
 
   @Autowired private lateinit var store: ToStoreOrders
 
@@ -216,7 +216,7 @@ class OrdersStoreIntegrationTest : ToStoreOrdersContract() {
 }
 ```
 
-> 📄 Source: [`OrdersStoreIntegrationTest.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/drivenadapters/persistence/OrdersStoreIntegrationTest.kt). `@Import(TestcontainersConfiguration::class)` pulls in the shared Testcontainers-Postgres and WireMock beans ([`TestcontainersConfiguration.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/TestcontainersConfiguration.kt)). Because every integration test carries this exact `@SpringBootTest` + `@Import` pair, Spring reuses a single cached context across the whole suite.
+> 📄 Source: [`ToStoreOrdersViaJpaIntegrationTest.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/drivenadapters/persistence/ToStoreOrdersViaJpaIntegrationTest.kt). `@Import(TestcontainersConfiguration::class)` pulls in the shared Testcontainers-Postgres and WireMock beans ([`TestcontainersConfiguration.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/TestcontainersConfiguration.kt)). Because every integration test carries this exact `@SpringBootTest` + `@Import` pair, Spring reuses a single cached context across the whole suite.
 
 Two things to notice. First, the class extends the same `ToStoreOrdersContract` from Part 2 — the real adapter must satisfy the exact behavior the fake promised. Second, the one bespoke test checks something only real infrastructure can reveal: that money lands in the right column in the right representation. That's an integration risk, and nothing below this layer could have caught it.
 

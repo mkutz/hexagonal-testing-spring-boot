@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.web.client.RestClient
 
 @Configuration
-class PaymentHandlerConfig {
+class ToHandlePaymentsViaRestConfig {
 
   @Bean
   fun paymentRestClient(@Value("\${payment.base-url}") baseUrl: String): RestClient =

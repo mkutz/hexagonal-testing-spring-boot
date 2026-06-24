@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
 
 /** Driven adapter: persists [Order]s through Spring Data JPA. */
 @Repository
-class OrdersStore(private val repository: OrderRepository) : ToStoreOrders {
+class ToStoreOrdersViaJpa(private val repository: OrderRepository) : ToStoreOrders {
 
   override fun save(order: Order) {
     repository.save(order.toEntity())
