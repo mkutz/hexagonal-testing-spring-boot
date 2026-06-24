@@ -37,8 +37,8 @@ dependencies {
 testing {
   suites {
     // Unit suite: fast, no Spring context, no infrastructure.
-    val test by
-      getting(JvmTestSuite::class) {
+    val test =
+      getByName<JvmTestSuite>("test") {
         useJUnitJupiter()
         dependencies {
           implementation(testFixtures(project()))
@@ -47,26 +47,25 @@ testing {
       }
 
     // Adapter/integration suite: real infrastructure via Testcontainers + WireMock.
-    val integrationTest by
-      registering(JvmTestSuite::class) {
-        useJUnitJupiter()
-        dependencies {
-          implementation(project())
-          implementation(testFixtures(project()))
-          implementation(libs.spring.boot.starter.data.jpa.test)
-          implementation(libs.spring.boot.starter.restclient.test)
-          implementation(libs.spring.boot.starter.validation.test)
-          implementation(libs.spring.boot.starter.webmvc.test)
-          implementation(libs.spring.boot.testcontainers)
-          implementation(libs.testcontainers.junit.jupiter)
-          implementation(libs.testcontainers.postgresql)
-          implementation(libs.assertj.core)
-          implementation(libs.approvej.core)
-          implementation(libs.approvej.json.jackson3)
-          implementation(libs.wiremock)
-        }
-        targets { all { testTask.configure { shouldRunAfter(test) } } }
+    register<JvmTestSuite>("integrationTest") {
+      useJUnitJupiter()
+      dependencies {
+        implementation(project())
+        implementation(testFixtures(project()))
+        implementation(libs.spring.boot.starter.data.jpa.test)
+        implementation(libs.spring.boot.starter.restclient.test)
+        implementation(libs.spring.boot.starter.validation.test)
+        implementation(libs.spring.boot.starter.webmvc.test)
+        implementation(libs.spring.boot.testcontainers)
+        implementation(libs.testcontainers.junit.jupiter)
+        implementation(libs.testcontainers.postgresql)
+        implementation(libs.assertj.core)
+        implementation(libs.approvej.core)
+        implementation(libs.approvej.json.jackson3)
+        implementation(libs.wiremock)
       }
+      targets { all { testTask.configure { shouldRunAfter(test) } } }
+    }
   }
 }
 
@@ -81,8 +80,8 @@ tasks.named("check") { dependsOn(testing.suites.named("integrationTest")) }
 // Sonar Cloud consumes.
 val testTasks = testing.suites.withType<JvmTestSuite>().flatMap { it.targets }.map { it.testTask }
 
-val jacocoMergedReport by
-  tasks.registering(JacocoReport::class) {
+val jacocoMergedReport =
+  tasks.register<JacocoReport>("jacocoMergedReport") {
     group = "verification"
     description = "Merged coverage across the unit and integration test suites."
     dependsOn(testTasks)
