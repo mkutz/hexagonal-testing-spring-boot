@@ -2,14 +2,14 @@ package io.github.mkutz.hexagonaltesting.drivenadapters.payment
 
 import io.github.mkutz.hexagonaltesting.application.order.CustomerId
 import io.github.mkutz.hexagonaltesting.application.order.Money
-import io.github.mkutz.hexagonaltesting.application.order.port.PaymentGateway
+import io.github.mkutz.hexagonaltesting.application.order.port.ToHandlePayments
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
 
 /** Driven adapter: talks to the external payment service over HTTP. */
 @Component
-class RestClientPaymentGateway(private val paymentRestClient: RestClient) : PaymentGateway {
+class PaymentHandler(private val paymentRestClient: RestClient) : ToHandlePayments {
 
   override fun creditLimit(customer: CustomerId): Money {
     val response =

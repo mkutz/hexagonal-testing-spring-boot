@@ -7,8 +7,8 @@ import io.github.mkutz.hexagonaltesting.application.order.OrderId
 import io.github.mkutz.hexagonaltesting.application.order.OrderPlaced
 import io.github.mkutz.hexagonaltesting.application.order.OrderRejected
 import io.github.mkutz.hexagonaltesting.application.order.PlaceOrderCommand
-import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
 import io.github.mkutz.hexagonaltesting.application.order.port.ToPlaceOrder
+import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import java.util.UUID
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
@@ -24,7 +24,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 /** Driving adapter: the inbound REST endpoint for orders. */
 @RestController
 @RequestMapping("/orders")
-class OrderController(private val placeOrder: ToPlaceOrder, private val orders: OrderRepository) {
+class OrderController(private val placeOrder: ToPlaceOrder, private val orders: ToStoreOrders) {
 
   @PostMapping
   fun place(@RequestBody request: PlaceOrderRequest): ResponseEntity<OrderResponse> =

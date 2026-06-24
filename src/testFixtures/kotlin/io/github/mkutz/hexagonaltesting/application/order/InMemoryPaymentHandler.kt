@@ -1,13 +1,13 @@
 package io.github.mkutz.hexagonaltesting.application.order
 
-import io.github.mkutz.hexagonaltesting.application.order.port.PaymentGateway
+import io.github.mkutz.hexagonaltesting.application.order.port.ToHandlePayments
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * In-memory fake of [PaymentGateway]. Credit limits are seeded via [setCreditLimit]; charges are
+ * In-memory fake of [ToHandlePayments]. Credit limits are seeded via [setCreditLimit]; charges are
  * recorded so state-based tests can assert on the resulting state rather than on method calls.
  */
-class InMemoryPaymentGateway : PaymentGateway {
+class InMemoryPaymentHandler : ToHandlePayments {
 
   private val creditLimits = ConcurrentHashMap<CustomerId, Money>()
   private val charges = ConcurrentHashMap<CustomerId, MutableList<Money>>()

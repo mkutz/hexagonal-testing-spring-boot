@@ -44,13 +44,13 @@ flowchart LR
 
     subgraph core["Application core (the hexagon)"]
         uc{{"PlaceOrder use case<br/>+ domain (Order, Money)"}}
-        rp[/"OrderRepository<br/>driven port"/]
-        pp[/"PaymentGateway<br/>driven port"/]
+        rp[/"ToStoreOrders<br/>driven port"/]
+        pp[/"ToHandlePayments<br/>driven port"/]
     end
 
     subgraph driven["Driven adapters"]
-        jpa["JpaOrderRepository"]
-        payg["RestClientPaymentGateway"]
+        jpa["OrdersStore"]
+        payg["PaymentHandler"]
     end
 
     db[(Postgres)]
@@ -92,13 +92,13 @@ Hexagonal architecture — the [Ports and Adapters](https://alistair.cockburn.us
 For unit tests, I replace each port with a hand-written in-memory stub. A repository port backed by Postgres in production becomes a wrapped `HashMap` in the test.
 
 ```kotlin
-interface OrderRepository {
+interface ToStoreOrders {
   fun save(order: Order)
 
   fun findById(id: OrderId): Order?
 }
 
-class InMemoryOrderRepository : OrderRepository {
+class InMemoryOrdersStore : ToStoreOrders {
 
   private val store = ConcurrentHashMap<OrderId, Order>()
 
@@ -110,15 +110,15 @@ class InMemoryOrderRepository : OrderRepository {
 }
 ```
 
-> 📄 Source: [`OrderRepository.kt`](src/main/kotlin/io/github/mkutz/hexagonaltesting/application/order/port/OrderRepository.kt) · [`InMemoryOrderRepository.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/InMemoryOrderRepository.kt) — the snippets below are taken verbatim from this repository's Kotlin sources, trimmed to the relevant excerpt and without the package and import lines.
+> 📄 Source: [`ToStoreOrders.kt`](src/main/kotlin/io/github/mkutz/hexagonaltesting/application/order/port/ToStoreOrders.kt) · [`InMemoryOrdersStore.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/InMemoryOrdersStore.kt) — the snippets below are taken verbatim from this repository's Kotlin sources, trimmed to the relevant excerpt and without the package and import lines.
 
 The core's use case is then tested directly, with no Spring context, no mocking framework, and no infrastructure:
 
 ```kotlin
 class PlaceOrderTest {
 
-  private val orders = InMemoryOrderRepository()
-  private val payments = InMemoryPaymentGateway()
+  private val orders = InMemoryOrdersStore()
+  private val payments = InMemoryPaymentHandler()
   private val placeOrder = PlaceOrder(orders, payments)
 
   @Test
@@ -156,25 +156,25 @@ These are state-based tests: they assert on returned values and on the resulting
 The standard rebuttal to in-memory fakes is that they can drift from the real adapter's behavior, so your green unit tests prove nothing about production. This is a real risk and it must be addressed, not waved away. The answer is a **shared contract test suite**: an abstract test class that encodes the behavior every implementation of the port must satisfy, run against both the fake and the real adapter.
 
 ```kotlin
-abstract class OrderRepositoryContract {
+abstract class ToStoreOrdersContract {
 
-  protected abstract fun repository(): OrderRepository
+  protected abstract fun store(): ToStoreOrders
 
   @Test
   fun `saved order can be retrieved by id`() {
     val order = anOrder()
-    repository().save(order)
-    assertThat(repository().findById(order.id)).isEqualTo(order)
+    store().save(order)
+    assertThat(store().findById(order.id)).isEqualTo(order)
   }
 
   @Test
   fun `unknown id returns null`() {
-    assertThat(repository().findById(OrderId(UUID.randomUUID()))).isNull()
+    assertThat(store().findById(OrderId(UUID.randomUUID()))).isNull()
   }
 }
 ```
 
-> 📄 Source: [`OrderRepositoryContract.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/OrderRepositoryContract.kt)
+> 📄 Source: [`ToStoreOrdersContract.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/ToStoreOrdersContract.kt)
 >
 > **Side note — test data builders.** The `anOrder()` helper above is a *test data builder*: a factory function whose defaults are valid, random values, so each test overrides only the field it cares about — `anOrder(amount = Money.euros(120))`. It keeps setup to a minimum (the **Maintainable** of TRIMS) and centralises the random-ID discipline that Part 6 leans on, in one place that feeds every layer. In Kotlin a default-argument factory is all a builder needs to be — no fluent `Builder().with…().build()` ceremony. Source: [`TestData.kt`](src/testFixtures/kotlin/io/github/mkutz/hexagonaltesting/application/order/TestData.kt).
 
@@ -191,18 +191,18 @@ I use a single shared application context across all integration tests. Spinning
 ```kotlin
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(TestcontainersConfiguration::class)
-class JpaOrderRepositoryIntegrationTest : OrderRepositoryContract() {
+class OrdersStoreIntegrationTest : ToStoreOrdersContract() {
 
-  @Autowired private lateinit var repository: OrderRepository
+  @Autowired private lateinit var store: ToStoreOrders
 
   @Autowired private lateinit var jdbcTemplate: JdbcTemplate
 
-  override fun repository(): OrderRepository = repository
+  override fun store(): ToStoreOrders = store
 
   @Test
   fun `persists money as minor units in the expected column`() {
     val order = anOrderOf(Money.euros(80))
-    repository.save(order)
+    store.save(order)
 
     val amountMinor =
       jdbcTemplate.queryForObject(
@@ -216,9 +216,9 @@ class JpaOrderRepositoryIntegrationTest : OrderRepositoryContract() {
 }
 ```
 
-> 📄 Source: [`JpaOrderRepositoryIntegrationTest.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/drivenadapters/persistence/JpaOrderRepositoryIntegrationTest.kt). `@Import(TestcontainersConfiguration::class)` pulls in the shared Testcontainers-Postgres and WireMock beans ([`TestcontainersConfiguration.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/TestcontainersConfiguration.kt)). Because every integration test carries this exact `@SpringBootTest` + `@Import` pair, Spring reuses a single cached context across the whole suite.
+> 📄 Source: [`OrdersStoreIntegrationTest.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/drivenadapters/persistence/OrdersStoreIntegrationTest.kt). `@Import(TestcontainersConfiguration::class)` pulls in the shared Testcontainers-Postgres and WireMock beans ([`TestcontainersConfiguration.kt`](src/integrationTest/kotlin/io/github/mkutz/hexagonaltesting/TestcontainersConfiguration.kt)). Because every integration test carries this exact `@SpringBootTest` + `@Import` pair, Spring reuses a single cached context across the whole suite.
 
-Two things to notice. First, the class extends the same `OrderRepositoryContract` from Part 2 — the real adapter must satisfy the exact behavior the fake promised. Second, the one bespoke test checks something only real infrastructure can reveal: that money lands in the right column in the right representation. That's an integration risk, and nothing below this layer could have caught it.
+Two things to notice. First, the class extends the same `ToStoreOrdersContract` from Part 2 — the real adapter must satisfy the exact behavior the fake promised. Second, the one bespoke test checks something only real infrastructure can reveal: that money lands in the right column in the right representation. That's an integration risk, and nothing below this layer could have caught it.
 
 **The number of cases here is small, by design.** I do not re-test the credit-limit boundaries; those were exhausted in the unit tests, and the adapter has no opinion about credit limits. I test the contract (via the shared suite) plus the handful of things that are genuinely about the integration: mapping correctness, dialect-specific SQL, serialization, transaction behavior. One happy path and a few integration-specific cases per adapter is usually enough. **This is the payoff of doing boundary and equivalence testing at the unit layer: the integration layer only has to prove the wiring, so it stays thin.**
 
@@ -235,7 +235,7 @@ These tests drive the application through real clients — the JVM's `HttpClient
 @Import(TestcontainersConfiguration::class)
 class PlaceOrderEndToEndTest {
 
-  @Autowired private lateinit var orders: OrderRepository
+  @Autowired private lateinit var orders: ToStoreOrders
 
   @LocalServerPort private var port: Int = 0
 

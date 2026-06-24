@@ -3,4 +3,4 @@ package io.github.mkutz.hexagonaltesting.drivenadapters.persistence
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 
-interface SpringDataOrderRepository : JpaRepository<OrderEntity, UUID>
+interface OrderRepository : JpaRepository<OrderEntity, UUID>

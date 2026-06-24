@@ -12,7 +12,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import io.github.mkutz.hexagonaltesting.TestcontainersConfiguration
 import io.github.mkutz.hexagonaltesting.application.order.CustomerId
 import io.github.mkutz.hexagonaltesting.application.order.Money
-import io.github.mkutz.hexagonaltesting.application.order.port.PaymentGateway
+import io.github.mkutz.hexagonaltesting.application.order.port.ToHandlePayments
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,15 +22,14 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDO
 import org.springframework.context.annotation.Import
 
 /**
- * Drives the real RestClient payment adapter against a WireMock stand-in for the third-party
- * payment service — the integration risk only real HTTP can reveal: URL, serialization, response
- * mapping.
+ * Drives the real `PaymentHandler` adapter against a WireMock stand-in for the third-party payment
+ * service — the integration risk only real HTTP can reveal: URL, serialization, response mapping.
  */
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(TestcontainersConfiguration::class)
-class RestClientPaymentGatewayIntegrationTest {
+class PaymentHandlerIntegrationTest {
 
-  @Autowired private lateinit var paymentGateway: PaymentGateway
+  @Autowired private lateinit var paymentHandler: ToHandlePayments
 
   @Autowired private lateinit var paymentServer: WireMockServer
 
@@ -47,7 +46,7 @@ class RestClientPaymentGatewayIntegrationTest {
         .willReturn(okJson("""{"limitMinor": 50000}"""))
     )
 
-    assertThat(paymentGateway.creditLimit(customer)).isEqualTo(Money.ofMinorUnits(50_000))
+    assertThat(paymentHandler.creditLimit(customer)).isEqualTo(Money.ofMinorUnits(50_000))
   }
 
   @Test
@@ -57,7 +56,7 @@ class RestClientPaymentGatewayIntegrationTest {
       post(urlPathEqualTo("/customers/${customer.value}/charges")).willReturn(ok())
     )
 
-    paymentGateway.charge(customer, Money.euros(80))
+    paymentHandler.charge(customer, Money.euros(80))
 
     paymentServer.verify(
       postRequestedFor(urlPathEqualTo("/customers/${customer.value}/charges"))

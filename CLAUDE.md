@@ -17,7 +17,7 @@ This is the companion codebase for the article in `README.md`, "Testing Hexagona
 
 # Run a single test class or method (either suite):
 ./gradlew test --tests "*PlaceOrderTest"
-./gradlew integrationTest --tests "*JpaOrderRepositoryIntegrationTest"
+./gradlew integrationTest --tests "*OrdersStoreIntegrationTest"
 ./gradlew test --tests "*PlaceOrderTest.placing an order below the credit limit succeeds"
 ```
 
@@ -37,12 +37,12 @@ strategy work:
 - `application/order/` — the **core**: domain (`Order`, `Money`, `CustomerId`, `OrderId`) and the
   `PlaceOrder` use case. Depends only on port interfaces, never on Spring infrastructure, JPA, or
   HTTP. `Money` is stored/compared in minor units (cents).
-- `application/order/port/` — the **driven ports**: `OrderRepository`, `PaymentGateway`. The core
+- `application/order/port/` — the **driven ports**: `ToStoreOrders`, `ToHandlePayments`. The core
   owns these interfaces; adapters implement them.
 - `adaptersdriving/web/` — the **driving adapter**: `OrderController` and its request/response DTOs.
-- `drivenadapters/persistence/` — JPA adapter (`JpaOrderRepository` + `OrderEntity` +
-  `SpringDataOrderRepository`) backed by Postgres.
-- `drivenadapters/payment/` — `RestClientPaymentGateway`, an HTTP client to an external payment service.
+- `drivenadapters/persistence/` — JPA adapter (`OrdersStore` + `OrderEntity` +
+  `OrderRepository`) backed by Postgres.
+- `drivenadapters/payment/` — `PaymentHandler`, an HTTP client to an external payment service.
 
 The core must not import from `adaptersdriving`, `drivenadapters`, or Spring web/JPA. New behavior
 goes in the core behind a port; new infrastructure goes in an adapter implementing a port.
@@ -54,9 +54,9 @@ re-test a risk at a higher layer. Concretely:
 
 - **Unit tests** (`src/test/`) — exhaust business-logic risk: every equivalence class and boundary
   (credit-limit cases live here). State-based assertions only; **no mocking framework**. Ports are
-  replaced by hand-written in-memory fakes from `src/testFixtures/` (`InMemoryOrderRepository`,
-  `InMemoryPaymentGateway`). No Spring context.
-- **Contract test suites** (`src/testFixtures/`, e.g. `OrderRepositoryContract`) — abstract classes
+  replaced by hand-written in-memory fakes from `src/testFixtures/` (`InMemoryOrdersStore`,
+  `InMemoryPaymentHandler`). No Spring context.
+- **Contract test suites** (`src/testFixtures/`, e.g. `ToStoreOrdersContract`) — abstract classes
   encoding behavior every port implementation must satisfy. Run against *both* the in-memory fake
   (as a unit test) and the real adapter (in the integration suite). This is what keeps fakes honest;
   when you add a port method, extend its contract.

@@ -2,7 +2,7 @@ package io.github.mkutz.hexagonaltesting.adaptersdriving.web
 
 import io.github.mkutz.hexagonaltesting.TestcontainersConfiguration
 import io.github.mkutz.hexagonaltesting.application.order.anOrder
-import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
+import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import org.approvej.ApprovalBuilder.approve
 import org.approvej.json.jackson3.JsonPrintFormat.json
 import org.approvej.scrub.Scrubbers.uuids
@@ -23,7 +23,7 @@ class OrderResponseApprovalTest {
 
   @Autowired private lateinit var orderController: OrderController
 
-  @Autowired private lateinit var orders: OrderRepository
+  @Autowired private lateinit var orders: ToStoreOrders
 
   @Test
   fun orderResponseContract() {

@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import io.github.mkutz.hexagonaltesting.TestcontainersConfiguration
 import io.github.mkutz.hexagonaltesting.application.order.OrderId
-import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
+import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Import
 @Import(TestcontainersConfiguration::class)
 class PlaceOrderEndToEndTest {
 
-  @Autowired private lateinit var orders: OrderRepository
+  @Autowired private lateinit var orders: ToStoreOrders
 
   @Autowired private lateinit var paymentServer: WireMockServer
 

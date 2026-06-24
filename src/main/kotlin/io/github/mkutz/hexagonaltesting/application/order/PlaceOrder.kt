@@ -1,13 +1,13 @@
 package io.github.mkutz.hexagonaltesting.application.order
 
-import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
-import io.github.mkutz.hexagonaltesting.application.order.port.PaymentGateway
+import io.github.mkutz.hexagonaltesting.application.order.port.ToHandlePayments
 import io.github.mkutz.hexagonaltesting.application.order.port.ToPlaceOrder
+import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import org.springframework.stereotype.Service
 
 /** Core use case: place an order if the customer is within their credit limit. */
 @Service
-class PlaceOrder(private val orders: OrderRepository, private val payments: PaymentGateway) :
+class PlaceOrder(private val orders: ToStoreOrders, private val payments: ToHandlePayments) :
   ToPlaceOrder {
 
   override fun handle(command: PlaceOrderCommand): PlaceOrderResult {

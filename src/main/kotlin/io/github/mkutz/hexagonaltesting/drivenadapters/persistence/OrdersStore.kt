@@ -4,19 +4,19 @@ import io.github.mkutz.hexagonaltesting.application.order.CustomerId
 import io.github.mkutz.hexagonaltesting.application.order.Money
 import io.github.mkutz.hexagonaltesting.application.order.Order
 import io.github.mkutz.hexagonaltesting.application.order.OrderId
-import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
+import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import org.springframework.stereotype.Repository
 
 /** Driven adapter: persists [Order]s through Spring Data JPA. */
 @Repository
-class JpaOrderRepository(private val orders: SpringDataOrderRepository) : OrderRepository {
+class OrdersStore(private val repository: OrderRepository) : ToStoreOrders {
 
   override fun save(order: Order) {
-    orders.save(order.toEntity())
+    repository.save(order.toEntity())
   }
 
   override fun findById(id: OrderId): Order? =
-    orders.findById(id.value).map(OrderEntity::toDomain).orElse(null)
+    repository.findById(id.value).map(OrderEntity::toDomain).orElse(null)
 }
 
 private fun Order.toEntity() = OrderEntity(id.value, customer.value, amount.minorUnits)

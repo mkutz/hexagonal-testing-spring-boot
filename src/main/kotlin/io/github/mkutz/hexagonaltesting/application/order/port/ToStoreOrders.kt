@@ -4,7 +4,7 @@ import io.github.mkutz.hexagonaltesting.application.order.Order
 import io.github.mkutz.hexagonaltesting.application.order.OrderId
 
 /** Output port for persisting and retrieving [Order]s. */
-interface OrderRepository {
+interface ToStoreOrders {
   fun save(order: Order)
 
   fun findById(id: OrderId): Order?

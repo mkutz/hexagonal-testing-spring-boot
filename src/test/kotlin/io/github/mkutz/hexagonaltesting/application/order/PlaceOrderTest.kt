@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test
  */
 class PlaceOrderTest {
 
-  private val orders = InMemoryOrderRepository()
-  private val payments = InMemoryPaymentGateway()
+  private val orders = InMemoryOrdersStore()
+  private val payments = InMemoryPaymentHandler()
   private val placeOrder = PlaceOrder(orders, payments)
 
   @Test

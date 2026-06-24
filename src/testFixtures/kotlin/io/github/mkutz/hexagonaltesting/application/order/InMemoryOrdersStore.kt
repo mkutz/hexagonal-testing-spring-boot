@@ -1,10 +1,10 @@
 package io.github.mkutz.hexagonaltesting.application.order
 
-import io.github.mkutz.hexagonaltesting.application.order.port.OrderRepository
+import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import java.util.concurrent.ConcurrentHashMap
 
-/** Hand-written in-memory fake of [OrderRepository] for fast, infrastructure-free unit tests. */
-class InMemoryOrderRepository : OrderRepository {
+/** Hand-written in-memory fake of [ToStoreOrders] for fast, infrastructure-free unit tests. */
+class InMemoryOrdersStore : ToStoreOrders {
 
   private val store = ConcurrentHashMap<OrderId, Order>()
 
