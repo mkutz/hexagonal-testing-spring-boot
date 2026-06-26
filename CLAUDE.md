@@ -36,8 +36,8 @@ The package layout *is* the hexagon. Respect these boundaries — they are what 
 strategy work:
 
 - `application/order/` — the **core**: domain (`Order`, `Money`, `CustomerId`, `OrderId`) and the
-  `PlaceOrder` use case. Depends only on port interfaces, never on Spring infrastructure, JPA, or
-  HTTP. `Money` is stored/compared in minor units (cents).
+  `OrderService` use cases (`ToPlaceOrder`, `ToGetOrder`). Depends only on port interfaces, never on
+  Spring infrastructure, JPA, or HTTP. `Money` is stored/compared in minor units (cents).
 - `application/order/port/` — the **driven ports**: `ToStoreOrders`, `ToHandlePayments`. The core
   owns these interfaces; adapters implement them.
 - `adaptersdriving/web/` — the **driving adapter**: `OrderController` and its request/response DTOs.

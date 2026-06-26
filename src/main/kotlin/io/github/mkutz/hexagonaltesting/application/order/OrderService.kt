@@ -1,16 +1,19 @@
 package io.github.mkutz.hexagonaltesting.application.order
 
+import io.github.mkutz.hexagonaltesting.application.order.port.ToGetOrder
 import io.github.mkutz.hexagonaltesting.application.order.port.ToHandlePayments
 import io.github.mkutz.hexagonaltesting.application.order.port.ToPlaceOrder
 import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import org.springframework.stereotype.Service
 
-/** Core use case: place an order if the customer is within their credit limit. */
+/**
+ * Core service for the order use cases: place an order within the credit limit, and look one up.
+ */
 @Service
-class PlaceOrder(
+class OrderService(
   private val orderStore: ToStoreOrders,
   private val paymentHandler: ToHandlePayments,
-) : ToPlaceOrder {
+) : ToPlaceOrder, ToGetOrder {
 
   override fun handle(command: PlaceOrderCommand): PlaceOrderResult {
     if (command.amount > paymentHandler.creditLimit(command.customer)) {
@@ -21,4 +24,6 @@ class PlaceOrder(
     paymentHandler.charge(command.customer, command.amount)
     return OrderPlaced(order.id)
   }
+
+  override fun byId(id: OrderId): Order? = orderStore.findById(id)
 }

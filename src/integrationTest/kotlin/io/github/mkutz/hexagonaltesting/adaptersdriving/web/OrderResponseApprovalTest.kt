@@ -30,7 +30,7 @@ class OrderResponseApprovalTest {
     val order = anOrder()
     orders.save(order)
 
-    val response = orderController.getOrder(order.id.value)
+    val response = orderController.get(order.id.value)
 
     approve(response).printedAs(json()).scrubbedOf(uuids()).byFile()
   }

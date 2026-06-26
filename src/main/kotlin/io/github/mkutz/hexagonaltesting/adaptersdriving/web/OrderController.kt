@@ -7,8 +7,8 @@ import io.github.mkutz.hexagonaltesting.application.order.OrderId
 import io.github.mkutz.hexagonaltesting.application.order.OrderPlaced
 import io.github.mkutz.hexagonaltesting.application.order.OrderRejected
 import io.github.mkutz.hexagonaltesting.application.order.PlaceOrderCommand
+import io.github.mkutz.hexagonaltesting.application.order.port.ToGetOrder
 import io.github.mkutz.hexagonaltesting.application.order.port.ToPlaceOrder
-import io.github.mkutz.hexagonaltesting.application.order.port.ToStoreOrders
 import java.util.UUID
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
@@ -24,7 +24,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 /** Driving adapter: the inbound REST endpoint for orders. */
 @RestController
 @RequestMapping("/orders")
-class OrderController(private val placeOrder: ToPlaceOrder, private val orders: ToStoreOrders) {
+class OrderController(private val placeOrder: ToPlaceOrder, private val getOrder: ToGetOrder) {
 
   @PostMapping
   fun place(@RequestBody request: PlaceOrderRequest): ResponseEntity<OrderResponse> =
@@ -40,14 +40,14 @@ class OrderController(private val placeOrder: ToPlaceOrder, private val orders: 
             .path("/{id}")
             .buildAndExpand(result.orderId.value)
             .toUri()
-        ResponseEntity.created(location).body(orders.findById(result.orderId)!!.toResponse())
+        ResponseEntity.created(location).body(getOrder.byId(result.orderId)!!.toResponse())
       }
       is OrderRejected -> ResponseEntity.unprocessableContent().build()
     }
 
   @GetMapping("/{id}")
-  fun getOrder(@PathVariable id: UUID): OrderResponse =
-    orders.findById(OrderId(id))?.toResponse()
+  fun get(@PathVariable id: UUID): OrderResponse =
+    getOrder.byId(OrderId(id))?.toResponse()
       ?: throw ResponseStatusException(NOT_FOUND, "No order $id")
 }
 

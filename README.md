@@ -99,7 +99,7 @@ flowchart LR
     end
 
     subgraph core["Application core (the hexagon)"]
-        uc{{"PlaceOrder use case<br/>+ domain (Order, Money)"}}
+        uc{{"OrderService<br/>+ domain (Order, Money)"}}
         rp[/"ToStoreOrders<br/>driven port"/]
         pp[/"ToHandlePayments<br/>driven port"/]
     end
@@ -133,7 +133,7 @@ Read the diagram as the risk-to-layer thesis made visual: each risk is mitigated
 
 |             Risk              |                                   Where it lives in the diagram                                    |           Lowest layer that mitigates it            |
 |-------------------------------|----------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| 🔵 **Business-logic**         | the core – `PlaceOrder` and the domain model                                                       | Unit tests ([Part 2][part-2])                       |
+| 🔵 **Business-logic**         | the core – `OrderService` and the domain model                                                     | Unit tests ([Part 2][part-2])                       |
 | 🟠 **Integration**            | each driven adapter where it meets real infrastructure – JPA ↔ Postgres, RestClient ↔ payment HTTP | Driven-adapter integration tests ([Part 3][part-3]) |
 | 🟢 **Wiring & configuration** | the whole assembled path: driving adapter → core → driven adapters (Spring wires it together)      | End-to-end test ([Part 4][part-4])                  |
 | 🟣 **Contract**               | the interfaces crossing the boundary – the web response shape, the payment request payload         | Approval tests ([Part 5][part-5])                   |
@@ -180,14 +180,14 @@ class PlaceOrderTest {
 
   private val orderStore = ToStoreOrdersInMemory()
   private val paymentHandler = ToHandlePaymentsInMemory()
-  private val placeOrder = PlaceOrder(orderStore, paymentHandler)
+  private val orderService = OrderService(orderStore, paymentHandler)
 
   @Test
   fun `placing an order below the credit limit succeeds`() {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(80)))
+    val result = orderService.handle(aPlaceOrderCommand(customer, Money.euros(80)))
 
     assertThat(result).isInstanceOf(OrderPlaced::class.java)
     assertThat(orderStore.findById((result as OrderPlaced).orderId)).isNotNull()
@@ -198,7 +198,7 @@ class PlaceOrderTest {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(120)))
+    val result = orderService.handle(aPlaceOrderCommand(customer, Money.euros(120)))
 
     assertThat(result).isInstanceOf(OrderRejected::class.java)
     assertThat(paymentHandler.chargesFor(customer)).isEmpty()
@@ -435,7 +435,7 @@ fun orderResponseContract() {
   val order = anOrder()
   orders.save(order)
 
-  val response = orderController.getOrder(order.id.value)
+  val response = orderController.get(order.id.value)
 
   approve(response).printedAs(json()).scrubbedOf(uuids()).byFile()
 }

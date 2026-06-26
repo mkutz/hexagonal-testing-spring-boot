@@ -12,14 +12,14 @@ class PlaceOrderTest {
 
   private val orderStore = ToStoreOrdersInMemory()
   private val paymentHandler = ToHandlePaymentsInMemory()
-  private val placeOrder = PlaceOrder(orderStore, paymentHandler)
+  private val orderService = OrderService(orderStore, paymentHandler)
 
   @Test
   fun `placing an order below the credit limit succeeds`() {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(80)))
+    val result = orderService.handle(aPlaceOrderCommand(customer, Money.euros(80)))
 
     assertThat(result).isInstanceOf(OrderPlaced::class.java)
     assertThat(orderStore.findById((result as OrderPlaced).orderId)).isNotNull()
@@ -30,7 +30,7 @@ class PlaceOrderTest {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(100)))
+    val result = orderService.handle(aPlaceOrderCommand(customer, Money.euros(100)))
 
     assertThat(result).isInstanceOf(OrderPlaced::class.java)
   }
@@ -40,7 +40,7 @@ class PlaceOrderTest {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.ofMinorUnits(10_001)))
+    val result = orderService.handle(aPlaceOrderCommand(customer, Money.ofMinorUnits(10_001)))
 
     assertThat(result).isInstanceOf(OrderRejected::class.java)
   }
@@ -50,7 +50,7 @@ class PlaceOrderTest {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    val result = placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(120)))
+    val result = orderService.handle(aPlaceOrderCommand(customer, Money.euros(120)))
 
     assertThat(result).isInstanceOf(OrderRejected::class.java)
     assertThat(paymentHandler.chargesFor(customer)).isEmpty()
@@ -61,7 +61,7 @@ class PlaceOrderTest {
     val customer = CustomerId.random()
     paymentHandler.setCreditLimit(customer, Money.euros(100))
 
-    placeOrder.handle(aPlaceOrderCommand(customer, Money.euros(80)))
+    orderService.handle(aPlaceOrderCommand(customer, Money.euros(80)))
 
     assertThat(paymentHandler.chargesFor(customer)).containsExactly(Money.euros(80))
   }
