@@ -43,6 +43,7 @@ testing {
         dependencies {
           implementation(testFixtures(project()))
           implementation(libs.assertj.core)
+          implementation(libs.archunit)
         }
       }
 

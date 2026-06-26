@@ -1,5 +1,6 @@
 [versions]
 approvej = "1.6.2"
+archunit = "1.4.1"
 kotlin = "2.4.0"
 ktlint = "1.8.0"
 sonarqube = "7.3.1.8318"
@@ -11,6 +12,7 @@ wiremock = "3.13.2"
 [libraries]
 approvej-core = { module = "org.approvej:core", version.ref = "approvej" }
 approvej-json-jackson3 = { module = "org.approvej:json-jackson3", version.ref = "approvej" }
+archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
 assertj-core = { module = "org.assertj:assertj-core" }
 jackson-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
